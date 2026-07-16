@@ -1,0 +1,19 @@
+import { Request, Response } from "express";
+import { z } from "zod";
+import { sendContactEmail } from "../services/email.service";
+
+const contactSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email(),
+  message: z.string().min(1).max(5000),
+});
+
+export async function submitContact(req: Request, res: Response) {
+  const parsed = contactSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
+  }
+
+  await sendContactEmail(parsed.data);
+  return res.status(200).json({ ok: true });
+}
