@@ -12,6 +12,23 @@ const blockSchema = new Schema(
   { _id: false }
 );
 
+const autosaveSchema = new Schema(
+  {
+    title: { type: String },
+    slug: { type: String },
+    excerpt: { type: String },
+    blocks: { type: [blockSchema], default: [] },
+    coverImage: { type: String },
+    tags: { type: [String], default: [] },
+    category: { type: String },
+    seoTitle: { type: String },
+    seoDescription: { type: String },
+    ogImage: { type: String },
+    savedAt: { type: Date },
+  },
+  { _id: false }
+);
+
 const blogPostSchema = new Schema(
   {
     title: { type: String, required: true },
@@ -21,8 +38,13 @@ const blogPostSchema = new Schema(
     blocks: { type: [blockSchema], default: [] },
     coverImage: { type: String },
     tags: { type: [String], default: [] },
+    category: { type: String },
+    seoTitle: { type: String },
+    seoDescription: { type: String },
+    ogImage: { type: String },
     published: { type: Boolean, default: false },
     publishedAt: { type: Date },
+    autosave: { type: autosaveSchema, default: undefined },
   },
   { timestamps: true }
 );
