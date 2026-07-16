@@ -4,7 +4,7 @@ import { BlogPostModel } from "../models/BlogPost";
 export async function listBlogPosts(_req: Request, res: Response) {
   const posts = await BlogPostModel.find({ published: true })
     .sort({ publishedAt: -1 })
-    .select("-content");
+    .select("-blocks");
   return res.json(posts);
 }
 
