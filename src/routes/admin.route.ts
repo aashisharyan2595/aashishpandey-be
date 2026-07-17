@@ -43,12 +43,24 @@ import {
   uploadMedia,
   uploadMediaBulk,
 } from "../controllers/media.controller";
+import { pushBlogPost, pushCaseStudy, syncAllToProduction } from "../controllers/sync-push.controller";
 import { approveUser, deleteUser, listUsers, rejectUser } from "../controllers/users.controller";
 import { asyncHandler } from "../middleware/asyncHandler";
+import { blockAdminInProduction } from "../middleware/blockAdminInProduction";
 import { requireAdmin } from "../middleware/requireAdmin";
+import { requireSyncSecret } from "../middleware/requireSyncSecret";
 import { upload } from "../middleware/upload";
+import { syncRouter } from "./sync.route";
 
 export const adminRouter = Router();
+
+// Must be first: on production, this 404s every route below except /sync/*,
+// so the CMS (including bootstrap) is entirely unreachable there.
+adminRouter.use(blockAdminInProduction);
+
+// Internal receiver for staging -> production content pushes. Service-to-service
+// auth via shared secret, not requireAdmin/JWT.
+adminRouter.use("/sync", requireSyncSecret, syncRouter);
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -81,6 +93,7 @@ adminRouter.delete("/users/:id", asyncHandler(deleteUser));
 
 adminRouter.get("/submissions", asyncHandler(listSubmissions));
 adminRouter.get("/dashboard-stats", asyncHandler(getDashboardStats));
+adminRouter.post("/sync-all", asyncHandler(syncAllToProduction));
 
 adminRouter.get("/blog", asyncHandler(listAllBlogPosts));
 adminRouter.get("/blog/:id", asyncHandler(getBlogPostById));
@@ -91,6 +104,7 @@ adminRouter.delete("/blog/:id", asyncHandler(deleteBlogPost));
 
 adminRouter.get("/blog/:id/revisions", asyncHandler(listRevisions));
 adminRouter.post("/blog/:id/revisions/:revisionId/restore", asyncHandler(restoreRevision));
+adminRouter.post("/blog/:id/push", asyncHandler(pushBlogPost));
 
 adminRouter.get("/categories", asyncHandler(listCategories));
 adminRouter.post("/categories", asyncHandler(createCategory));
@@ -102,6 +116,7 @@ adminRouter.get("/case-studies/:id", asyncHandler(getCaseStudyById));
 adminRouter.post("/case-studies", asyncHandler(createCaseStudy));
 adminRouter.put("/case-studies/:id", asyncHandler(updateCaseStudy));
 adminRouter.delete("/case-studies/:id", asyncHandler(deleteCaseStudy));
+adminRouter.post("/case-studies/:id/push", asyncHandler(pushCaseStudy));
 
 adminRouter.get("/media", asyncHandler(listMedia));
 adminRouter.post("/media", upload.single("file"), asyncHandler(uploadMedia));

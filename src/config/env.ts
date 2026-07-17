@@ -19,4 +19,10 @@ export const env = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL ?? "http://localhost:4000/api/admin/auth/google/callback",
+  // "staging" | "production" — explicit identity, NOT derived from NODE_ENV
+  // (Render sets NODE_ENV=production on both the Staging and Production services).
+  deployEnv: process.env.DEPLOY_ENV ?? "staging",
+  contentSyncSecret: process.env.CONTENT_SYNC_SECRET ?? "",
+  // Only set on the staging service — the base URL of the production backend to push content to.
+  productionApiUrl: process.env.PRODUCTION_API_URL ?? "",
 };
