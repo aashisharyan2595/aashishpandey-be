@@ -1,28 +1,10 @@
 import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
 import { z } from "zod";
-import { env } from "../config/env";
 import { BlogPostModel } from "../models/BlogPost";
 import { BlogPostRevisionModel } from "../models/BlogPostRevision";
 import { SubmissionModel } from "../models/Submission";
 
 const MAX_REVISIONS = 20;
-
-const loginSchema = z.object({ password: z.string().min(1) });
-
-export async function login(req: Request, res: Response) {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: "Invalid input" });
-  }
-
-  if (!env.adminPassword || parsed.data.password !== env.adminPassword) {
-    return res.status(401).json({ error: "Incorrect password" });
-  }
-
-  const token = jwt.sign({ role: "admin" }, env.adminJwtSecret, { expiresIn: "7d" });
-  return res.json({ token });
-}
 
 export async function listSubmissions(_req: Request, res: Response) {
   const submissions = await SubmissionModel.find().sort({ createdAt: -1 });
