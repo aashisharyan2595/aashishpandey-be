@@ -12,6 +12,11 @@ import { projectsRouter } from "./routes/projects.route";
 
 export const app = express();
 
+// Render (and most PaaS hosts) put the app behind a single reverse proxy hop,
+// which sets X-Forwarded-For. Without this, express-rate-limit throws on every
+// rate-limited request instead of keying off the real client IP.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({ origin: env.clientOrigin }));
 app.use(express.json());
