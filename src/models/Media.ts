@@ -5,6 +5,7 @@ const mediaSchema = new Schema(
     url: { type: String, required: true },
     publicId: { type: String, required: true },
     filename: { type: String, required: true },
+    alt: { type: String, default: "" },
     format: { type: String },
     width: { type: Number },
     height: { type: Number },

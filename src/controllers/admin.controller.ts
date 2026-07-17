@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { z } from "zod";
 import { BlogPostModel } from "../models/BlogPost";
 import { BlogPostRevisionModel } from "../models/BlogPostRevision";
+import { MediaModel } from "../models/Media";
 import { SubmissionModel } from "../models/Submission";
 
 const MAX_REVISIONS = 20;
@@ -9,6 +10,26 @@ const MAX_REVISIONS = 20;
 export async function listSubmissions(_req: Request, res: Response) {
   const submissions = await SubmissionModel.find().sort({ createdAt: -1 });
   return res.json(submissions);
+}
+
+export async function getDashboardStats(_req: Request, res: Response) {
+  const [published, drafts, submissionCount, mediaCount, recentPosts, recentSubmissions] =
+    await Promise.all([
+      BlogPostModel.countDocuments({ published: true }),
+      BlogPostModel.countDocuments({ published: false }),
+      SubmissionModel.countDocuments(),
+      MediaModel.countDocuments(),
+      BlogPostModel.find().sort({ updatedAt: -1 }).limit(5).select("title slug published updatedAt"),
+      SubmissionModel.find().sort({ createdAt: -1 }).limit(5).select("name email createdAt"),
+    ]);
+
+  return res.json({
+    posts: { published, drafts, total: published + drafts },
+    submissions: submissionCount,
+    media: mediaCount,
+    recentPosts,
+    recentSubmissions,
+  });
 }
 
 export async function listAllBlogPosts(_req: Request, res: Response) {
@@ -23,7 +44,19 @@ export async function getBlogPostById(req: Request, res: Response) {
 }
 
 const blockSchema = z.object({
-  type: z.enum(["heading", "paragraph", "image", "quote", "code"]),
+  type: z.enum([
+    "heading",
+    "paragraph",
+    "image",
+    "quote",
+    "code",
+    "divider",
+    "button",
+    "gallery",
+    "video",
+    "embed",
+    "html",
+  ]),
   data: z.unknown(),
 });
 

@@ -5,6 +5,7 @@ import {
   createBlogPost,
   deleteBlogPost,
   getBlogPostById,
+  getDashboardStats,
   listAllBlogPosts,
   listRevisions,
   listSubmissions,
@@ -22,13 +23,26 @@ import {
   resetPassword,
 } from "../controllers/auth.controller";
 import {
+  createCaseStudy,
+  deleteCaseStudy,
+  getCaseStudyById,
+  listAllCaseStudies,
+  updateCaseStudy,
+} from "../controllers/case-study.controller";
+import {
   createCategory,
   deleteCategory,
   listCategories,
   updateCategory,
 } from "../controllers/category.controller";
 import { googleCallback, googleStart } from "../controllers/google-auth.controller";
-import { deleteMedia, listMedia, uploadMedia } from "../controllers/media.controller";
+import {
+  deleteMedia,
+  listMedia,
+  updateMedia,
+  uploadMedia,
+  uploadMediaBulk,
+} from "../controllers/media.controller";
 import { approveUser, deleteUser, listUsers, rejectUser } from "../controllers/users.controller";
 import { asyncHandler } from "../middleware/asyncHandler";
 import { requireAdmin } from "../middleware/requireAdmin";
@@ -66,6 +80,7 @@ adminRouter.post("/users/:id/reject", asyncHandler(rejectUser));
 adminRouter.delete("/users/:id", asyncHandler(deleteUser));
 
 adminRouter.get("/submissions", asyncHandler(listSubmissions));
+adminRouter.get("/dashboard-stats", asyncHandler(getDashboardStats));
 
 adminRouter.get("/blog", asyncHandler(listAllBlogPosts));
 adminRouter.get("/blog/:id", asyncHandler(getBlogPostById));
@@ -82,6 +97,14 @@ adminRouter.post("/categories", asyncHandler(createCategory));
 adminRouter.put("/categories/:id", asyncHandler(updateCategory));
 adminRouter.delete("/categories/:id", asyncHandler(deleteCategory));
 
+adminRouter.get("/case-studies", asyncHandler(listAllCaseStudies));
+adminRouter.get("/case-studies/:id", asyncHandler(getCaseStudyById));
+adminRouter.post("/case-studies", asyncHandler(createCaseStudy));
+adminRouter.put("/case-studies/:id", asyncHandler(updateCaseStudy));
+adminRouter.delete("/case-studies/:id", asyncHandler(deleteCaseStudy));
+
 adminRouter.get("/media", asyncHandler(listMedia));
 adminRouter.post("/media", upload.single("file"), asyncHandler(uploadMedia));
+adminRouter.post("/media/bulk", upload.array("files", 20), asyncHandler(uploadMediaBulk));
+adminRouter.patch("/media/:id", asyncHandler(updateMedia));
 adminRouter.delete("/media/:id", asyncHandler(deleteMedia));

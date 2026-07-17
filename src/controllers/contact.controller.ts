@@ -7,6 +7,12 @@ const contactSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
   message: z.string().min(1).max(5000),
+  inquiryType: z.enum(["general", "recruiter", "project"]).default("general"),
+  company: z.string().max(200).optional().or(z.literal("")),
+  role: z.string().max(200).optional().or(z.literal("")),
+  projectType: z.string().max(200).optional().or(z.literal("")),
+  budget: z.string().max(100).optional().or(z.literal("")),
+  timeline: z.string().max(100).optional().or(z.literal("")),
 });
 
 export async function submitContact(req: Request, res: Response) {

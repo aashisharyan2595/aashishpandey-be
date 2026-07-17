@@ -7,7 +7,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:case-studies": "ts-node-dev --transpile-only --once src/scripts/seed-case-studies.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

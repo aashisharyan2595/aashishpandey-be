@@ -5,6 +5,16 @@ const submissionSchema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true },
     message: { type: String, required: true },
+    inquiryType: {
+      type: String,
+      enum: ["general", "recruiter", "project"],
+      default: "general",
+    },
+    company: { type: String },
+    role: { type: String },
+    projectType: { type: String },
+    budget: { type: String },
+    timeline: { type: String },
   },
   { timestamps: true }
 );
