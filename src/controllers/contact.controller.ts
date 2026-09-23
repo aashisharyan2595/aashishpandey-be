@@ -27,6 +27,12 @@ export async function submitContact(req: Request, res: Response) {
     console.error("Failed to store submission", err);
   }
 
-  await sendContactEmail(parsed.data);
+  // The submission is already safely stored above — don't let a slow or
+  // unreachable mail server hold the HTTP response (and the form's
+  // "Sending…" state) hostage. Fire-and-forget with its own error handling.
+  sendContactEmail(parsed.data).catch((err) => {
+    console.error("Failed to send contact email", err);
+  });
+
   return res.status(200).json({ ok: true });
 }
