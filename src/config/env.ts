@@ -10,6 +10,12 @@ export const env = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   contactToEmail: process.env.CONTACT_TO_EMAIL ?? "",
   contactFromEmail: process.env.CONTACT_FROM_EMAIL ?? "onboarding@resend.dev",
+  // Gmail SMTP (nodemailer) — the preferred sender when domain mail (e.g.
+  // Outlook/M365 on the primary domain) makes a Resend-verified sending
+  // domain undesirable. GMAIL_APP_PASSWORD is a Google Account App Password,
+  // not the account login password.
+  gmailUser: process.env.GMAIL_USER ?? "",
+  gmailAppPassword: process.env.GMAIL_APP_PASSWORD ?? "",
   adminJwtSecret: process.env.ADMIN_JWT_SECRET ?? "dev-only-insecure-secret",
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? "",
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY ?? "",
