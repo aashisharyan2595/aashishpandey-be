@@ -10,14 +10,18 @@ export const env = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   contactToEmail: process.env.CONTACT_TO_EMAIL ?? "",
   contactFromEmail: process.env.CONTACT_FROM_EMAIL ?? "onboarding@resend.dev",
-  // Brevo SMTP relay (nodemailer) — the preferred sender. Sends through
-  // Brevo's servers, touches no DNS on the primary domain (only the sender
-  // identity needs a one-click email verification in the Brevo dashboard).
-  // BREVO_SMTP_KEY is the SMTP key from Brevo's SMTP & API settings, not
-  // the account login password.
+  // Brevo transactional email HTTP API — the preferred sender. Unlike SMTP,
+  // this is a plain HTTPS call, so it isn't affected by hosts (like
+  // Render's free tier) that block outbound SMTP ports. BREVO_API_KEY is
+  // the key from Brevo's Settings -> SMTP & API -> API Keys tab (distinct
+  // from the SMTP key). The sender address still needs the same one-click
+  // verification in the Brevo dashboard, no DNS involved.
+  brevoApiKey: process.env.BREVO_API_KEY ?? "",
+  brevoFromEmail: process.env.BREVO_FROM_EMAIL ?? process.env.BREVO_SMTP_USER ?? "",
+  // Legacy Brevo SMTP relay — kept as a fallback for hosts that don't block
+  // outbound SMTP, but will time out on Render's free tier (see above).
   brevoSmtpUser: process.env.BREVO_SMTP_USER ?? "",
   brevoSmtpKey: process.env.BREVO_SMTP_KEY ?? "",
-  brevoFromEmail: process.env.BREVO_FROM_EMAIL ?? process.env.BREVO_SMTP_USER ?? "",
   // Gmail SMTP (nodemailer) — secondary fallback if Brevo isn't configured.
   // GMAIL_APP_PASSWORD is a Google Account App Password, not the account
   // login password (Google has been restricting these, so Brevo is
