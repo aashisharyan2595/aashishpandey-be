@@ -31,12 +31,39 @@ const gmailTransport =
       })
     : null;
 
-// Brevo SMTP relay is preferred — a verified single-sender identity (one
-// email-click confirmation, no DNS) sending through Brevo's own servers.
-// Gmail SMTP (App Password) is a secondary fallback, since Google has been
-// restricting App Password availability. Resend is the last resort, for
-// accounts that do want a Resend-verified sending domain.
+async function sendViaBrevoApi(params: { to: string; replyTo?: string; subject: string; text: string }): Promise<void> {
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      "api-key": env.brevoApiKey,
+    },
+    body: JSON.stringify({
+      sender: { name: "Aashish Pandey — Portfolio", email: env.brevoFromEmail },
+      to: [{ email: params.to }],
+      replyTo: params.replyTo ? { email: params.replyTo } : undefined,
+      subject: params.subject,
+      textContent: params.text,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
+  }
+}
+
+// Brevo's HTTP API is preferred — a plain HTTPS call (not SMTP), so it
+// isn't blocked by hosts like Render's free tier that block outbound SMTP
+// ports. The legacy Brevo SMTP relay and Gmail SMTP (App Password) are
+// fallbacks for hosts where SMTP isn't blocked. Resend is the last resort.
 async function sendEmail(params: { to: string; replyTo?: string; subject: string; text: string }): Promise<void> {
+  if (env.brevoApiKey && env.brevoFromEmail) {
+    await sendViaBrevoApi(params);
+    return;
+  }
+
   if (brevoTransport) {
     await brevoTransport.sendMail({
       from: `"Aashish Pandey — Portfolio" <${env.brevoFromEmail}>`,
