@@ -4,6 +4,13 @@ import { env } from "../config/env";
 
 const resend = env.resendApiKey ? new Resend(env.resendApiKey) : null;
 
+// Explicit, short timeouts — nodemailer's defaults (2 minutes) mean a
+// blocked/unreachable SMTP host hangs far longer than any caller should
+// ever wait. sendEmail() is fire-and-forget from the contact endpoint, but
+// a fast, logged failure still matters far more than a silent multi-minute
+// stall.
+const SMTP_TIMEOUTS = { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000 };
+
 const brevoTransport =
   env.brevoSmtpUser && env.brevoSmtpKey
     ? nodemailer.createTransport({
@@ -11,6 +18,7 @@ const brevoTransport =
         port: 587,
         secure: false,
         auth: { user: env.brevoSmtpUser, pass: env.brevoSmtpKey },
+        ...SMTP_TIMEOUTS,
       })
     : null;
 
@@ -19,6 +27,7 @@ const gmailTransport =
     ? nodemailer.createTransport({
         service: "gmail",
         auth: { user: env.gmailUser, pass: env.gmailAppPassword },
+        ...SMTP_TIMEOUTS,
       })
     : null;
 
