@@ -54,50 +54,82 @@ async function sendViaBrevoApi(params: { to: string; replyTo?: string; subject: 
   }
 }
 
-// Brevo's HTTP API is preferred — a plain HTTPS call (not SMTP), so it
-// isn't blocked by hosts like Render's free tier that block outbound SMTP
-// ports. The legacy Brevo SMTP relay and Gmail SMTP (App Password) are
-// fallbacks for hosts where SMTP isn't blocked. Resend is the last resort.
+// Resend is preferred — a plain HTTPS API call (not SMTP, so it isn't
+// blocked by hosts like Render's free tier that block outbound SMTP
+// ports), and its sandbox sender (onboarding@resend.dev, the
+// CONTACT_FROM_EMAIL default) needs no domain verification at all as long
+// as CONTACT_TO_EMAIL is the same address the Resend account was signed up
+// with. Brevo (HTTP API, then legacy SMTP) and Gmail SMTP remain as
+// fallbacks, each independently attempted (one failing falls through to
+// the next) rather than only tried when the previous one is unconfigured.
 async function sendEmail(params: { to: string; replyTo?: string; subject: string; text: string }): Promise<void> {
+  const attempts: { name: string; run: () => Promise<void> }[] = [];
+
+  if (resend) {
+    attempts.push({
+      name: "Resend",
+      run: async () => {
+        const { error } = await resend.emails.send({
+          from: env.contactFromEmail,
+          to: params.to,
+          replyTo: params.replyTo,
+          subject: params.subject,
+          text: params.text,
+        });
+        if (error) throw new Error(`Resend error: ${error.message}`);
+      },
+    });
+  }
+
   if (env.brevoApiKey && env.brevoFromEmail) {
-    await sendViaBrevoApi(params);
-    return;
+    attempts.push({ name: "Brevo API", run: () => sendViaBrevoApi(params) });
   }
 
   if (brevoTransport) {
-    await brevoTransport.sendMail({
-      from: `"Aashish Pandey — Portfolio" <${env.brevoFromEmail}>`,
-      to: params.to,
-      replyTo: params.replyTo,
-      subject: params.subject,
-      text: params.text,
+    attempts.push({
+      name: "Brevo SMTP",
+      run: async () => {
+        await brevoTransport.sendMail({
+          from: `"Aashish Pandey — Portfolio" <${env.brevoFromEmail}>`,
+          to: params.to,
+          replyTo: params.replyTo,
+          subject: params.subject,
+          text: params.text,
+        });
+      },
     });
-    return;
   }
 
   if (gmailTransport) {
-    await gmailTransport.sendMail({
-      from: `"Aashish Pandey — Portfolio" <${env.gmailUser}>`,
-      to: params.to,
-      replyTo: params.replyTo,
-      subject: params.subject,
-      text: params.text,
+    attempts.push({
+      name: "Gmail SMTP",
+      run: async () => {
+        await gmailTransport.sendMail({
+          from: `"Aashish Pandey — Portfolio" <${env.gmailUser}>`,
+          to: params.to,
+          replyTo: params.replyTo,
+          subject: params.subject,
+          text: params.text,
+        });
+      },
     });
+  }
+
+  if (attempts.length === 0) {
+    console.log("Email not sent (no sender configured):", params);
     return;
   }
 
-  if (resend && env.contactToEmail) {
-    await resend.emails.send({
-      from: env.contactFromEmail,
-      to: params.to,
-      replyTo: params.replyTo,
-      subject: params.subject,
-      text: params.text,
-    });
-    return;
+  for (const attempt of attempts) {
+    try {
+      await attempt.run();
+      return;
+    } catch (err) {
+      console.error(`${attempt.name} send failed, trying next sender if any`, err);
+    }
   }
 
-  console.log("Email not sent (no sender configured):", params);
+  console.error("All configured email senders failed:", params);
 }
 
 const INQUIRY_LABELS: Record<string, string> = {
