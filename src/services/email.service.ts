@@ -4,6 +4,16 @@ import { env } from "../config/env";
 
 const resend = env.resendApiKey ? new Resend(env.resendApiKey) : null;
 
+const brevoTransport =
+  env.brevoSmtpUser && env.brevoSmtpKey
+    ? nodemailer.createTransport({
+        host: "smtp-relay.brevo.com",
+        port: 587,
+        secure: false,
+        auth: { user: env.brevoSmtpUser, pass: env.brevoSmtpKey },
+      })
+    : null;
+
 const gmailTransport =
   env.gmailUser && env.gmailAppPassword
     ? nodemailer.createTransport({
@@ -12,12 +22,23 @@ const gmailTransport =
       })
     : null;
 
-// Gmail SMTP is preferred when configured — it sends through Gmail's own
-// servers and touches nothing on the primary domain's DNS, which matters
-// when that domain's mail (e.g. Outlook/M365) is managed elsewhere and a
-// Resend-verified sending domain isn't wanted. Resend remains a fallback
-// for accounts that do want it.
+// Brevo SMTP relay is preferred — a verified single-sender identity (one
+// email-click confirmation, no DNS) sending through Brevo's own servers.
+// Gmail SMTP (App Password) is a secondary fallback, since Google has been
+// restricting App Password availability. Resend is the last resort, for
+// accounts that do want a Resend-verified sending domain.
 async function sendEmail(params: { to: string; replyTo?: string; subject: string; text: string }): Promise<void> {
+  if (brevoTransport) {
+    await brevoTransport.sendMail({
+      from: `"Aashish Pandey — Portfolio" <${env.brevoFromEmail}>`,
+      to: params.to,
+      replyTo: params.replyTo,
+      subject: params.subject,
+      text: params.text,
+    });
+    return;
+  }
+
   if (gmailTransport) {
     await gmailTransport.sendMail({
       from: `"Aashish Pandey — Portfolio" <${env.gmailUser}>`,
